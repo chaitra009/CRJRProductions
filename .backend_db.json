@@ -1,0 +1,370 @@
+{
+  "households": {
+    "hh-prime": {
+      "id": "hh-prime",
+      "homeCode": "APAC-8421",
+      "name": "Vance Residence",
+      "region": "SINGAPORE",
+      "memberIds": [
+        "usr-admin-1",
+        "usr-cook-1",
+        "usr-patient-1",
+        "usr-dietitian-1"
+      ],
+      "activeCuisines": [
+        "Hainanese Heritage",
+        "Washoku (Japanese)",
+        "Sino-Singaporean",
+        "South Indian"
+      ],
+      "activeAppliances": [
+        "Rice Cooker (Porridge Mode)",
+        "Bamboo Steamer",
+        "Induction Cooktop",
+        "Slow Cooker"
+      ],
+      "defaultCookLanguage": "Tagalog",
+      "createdAt": "2026-10-18T05:21:47.914Z",
+      "updatedAt": "2026-10-18T05:21:47.915Z"
+    }
+  },
+  "users": {
+    "usr-admin-1": {
+      "id": "usr-admin-1",
+      "name": "Eleanor Vance",
+      "email": "eleanor.vance@vitalplate.app",
+      "age": 48,
+      "gender": "Female",
+      "roles": [
+        "admin",
+        "caregiver"
+      ],
+      "isHomeHead": true,
+      "householdId": "hh-prime",
+      "createdAt": "2026-10-18T05:21:47.914Z",
+      "updatedAt": "2026-10-18T05:21:47.914Z"
+    },
+    "usr-cook-1": {
+      "id": "usr-cook-1",
+      "name": "Maria Santos",
+      "email": "maria.cook@vitalplate.app",
+      "age": 36,
+      "gender": "Female",
+      "roles": [
+        "cook"
+      ],
+      "isHomeHead": false,
+      "householdId": "hh-prime",
+      "createdAt": "2026-10-18T05:21:47.914Z",
+      "updatedAt": "2026-10-18T05:21:47.915Z"
+    },
+    "usr-patient-1": {
+      "id": "usr-patient-1",
+      "name": "Arthur Vance",
+      "email": "arthur.vance@vitalplate.app",
+      "age": 78,
+      "gender": "Male",
+      "roles": [
+        "patient"
+      ],
+      "isHomeHead": false,
+      "householdId": "hh-prime",
+      "createdAt": "2026-10-18T05:21:47.914Z",
+      "updatedAt": "2026-10-18T05:21:47.915Z"
+    },
+    "usr-dietitian-1": {
+      "id": "usr-dietitian-1",
+      "name": "Dr. Sarah Chen, APD",
+      "email": "sarah.chen@vitalplate.app",
+      "age": 42,
+      "gender": "Female",
+      "roles": [
+        "dietitian"
+      ],
+      "isHomeHead": false,
+      "householdId": "hh-prime",
+      "createdAt": "2026-10-18T05:21:47.914Z",
+      "updatedAt": "2026-10-18T05:21:47.915Z"
+    }
+  },
+  "patients": {
+    "pt-arthur": {
+      "id": "pt-arthur",
+      "householdId": "hh-prime",
+      "name": "Arthur Vance",
+      "age": 78,
+      "primaryCondition": "Hypertension (Stage 2) & Mild Dysphagia",
+      "secondaryConditions": [
+        "Mild CKD Stage 3a",
+        "Gout Hyperuricemia"
+      ],
+      "textureNeeds": "Level 5 Minced & Moist (IDDSI)",
+      "targetSodiumMg": 1200,
+      "targetMaxGI": 52,
+      "potassiumRestricted": true,
+      "purineRestricted": true,
+      "notes": "Senior citizen post-stroke requiring soft steamed fish, low purine, and kombu dashi/calamansi umami flavor compensation without salt."
+    },
+    "pt-ananya": {
+      "id": "pt-ananya",
+      "householdId": "hh-prime",
+      "name": "Ananya Vance",
+      "age": 28,
+      "primaryCondition": "PCOS & High Insulin Resistance",
+      "secondaryConditions": [
+        "Hyperinsulinemia",
+        "HOMA-IR 4.2"
+      ],
+      "textureNeeds": "Standard Whole Foods",
+      "targetSodiumMg": 1500,
+      "targetMaxGI": 48,
+      "potassiumRestricted": false,
+      "purineRestricted": false,
+      "notes": "Target fasting insulin < 10 uIU/mL. Strict high-fiber low glycemic grain index (foxtail millet, barley)."
+    }
+  },
+  "biomarkers": {
+    "bm-1": {
+      "id": "bm-1",
+      "patientId": "pt-arthur",
+      "householdId": "hh-prime",
+      "markerName": "Serum Sodium",
+      "category": "Electrolytes",
+      "value": 144,
+      "unit": "mmol/L",
+      "referenceRange": "135 - 145 mmol/L",
+      "status": "NORMAL",
+      "clinicalSignificance": "Upper borderline. Strict table salt and hidden soy sauce restriction mandated.",
+      "dateTested": "2026-10-10",
+      "labProvider": "Singapore General Hospital Pathology"
+    },
+    "bm-2": {
+      "id": "bm-2",
+      "patientId": "pt-arthur",
+      "householdId": "hh-prime",
+      "markerName": "Serum Creatinine",
+      "category": "Cardiovascular & Renal",
+      "value": 1.45,
+      "unit": "mg/dL",
+      "referenceRange": "0.70 - 1.20 mg/dL",
+      "status": "ELEVATED",
+      "clinicalSignificance": "eGFR 48 mL/min indicates CKD Stage 3a. Limit total daily animal protein density.",
+      "dateTested": "2026-10-10",
+      "labProvider": "Singapore General Hospital Pathology"
+    },
+    "bm-3": {
+      "id": "bm-3",
+      "patientId": "pt-ananya",
+      "householdId": "hh-prime",
+      "markerName": "Fasting Insulin",
+      "category": "Metabolic & Glycemic",
+      "value": 24,
+      "unit": "uIU/mL",
+      "referenceRange": "< 10.0 uIU/mL",
+      "status": "CRITICAL_HIGH",
+      "clinicalSignificance": "Severe hyperinsulinemia (HOMA-IR 4.2) fueling ovarian androgen synthesis. Zero refined sugars.",
+      "dateTested": "2026-10-12",
+      "labProvider": "National University Hospital Lab"
+    }
+  },
+  "meals": {
+    "m-1": {
+      "id": "m-1",
+      "householdId": "hh-prime",
+      "dayOfWeek": "Monday",
+      "mealType": "LUNCH",
+      "dishName": "Steamed Barramundi with Ginger Scallion Dashi & Foxtail Millet",
+      "cuisine": "Hainanese Heritage",
+      "baseRecipe": "Traditional steamed fish fillet with light soy, scallions, and fragrant jasmine rice.",
+      "deltaDirectives": [
+        "Swap white jasmine rice with 100% steamed foxtail millet (GI 54)",
+        "Eliminate dark soy sauce; use kombu-shiitake dashi + freshly grated young ginger for umami",
+        "Limit cold-pressed sesame oil to strictly 1/2 teaspoon for aroma only",
+        "Steam barramundi until fork-tender (Level 5 Minced & Moist for Arthur)"
+      ],
+      "flavorCompensation": "Kombu dashi reduction + splash of calamansi zest provides salinity illusion without added sodium.",
+      "textureGuidance": "Flake fillet into small 4mm bite-sized flakes with moist ginger broth.",
+      "estimatedSodiumMg": 340,
+      "estimatedGI": 48,
+      "targetPatients": [
+        "pt-arthur",
+        "pt-ananya"
+      ],
+      "approvalStatus": "APPROVED_ACTIVE",
+      "dietitianReviewer": "Dr. Sarah Chen, APD (Dietitians Association of Australia)",
+      "dietitianNotes": "Exceptional low-sodium execution. Safe for Arthur CKD/hypertension and Ananya insulin resistance.",
+      "approvedAt": "2026-10-18T05:21:47.916Z"
+    },
+    "m-2": {
+      "id": "m-2",
+      "householdId": "hh-prime",
+      "dayOfWeek": "Tuesday",
+      "mealType": "DINNER",
+      "dishName": "Miso-Simmered Silk Tofu & Kabocha Squash in Kelp Broth",
+      "cuisine": "Washoku (Japanese)",
+      "baseRecipe": "Simmered tofu with sweet mirin sauce, shoyu, and white sticky rice.",
+      "deltaDirectives": [
+        "Substitute white polished rice with rolled barley & foxtail millet blend",
+        "Use white low-sodium koji miso (max 1 tsp) diluted in intense kombu dashi",
+        "Simmer kabocha squash until velvet-soft for senior chewing ease",
+        "Add finely slivered myoga and yuzu peel for vibrant aromatic lift without salt"
+      ],
+      "flavorCompensation": "Toasted sesame oil mist (1 drop) + yuzu zest mimics rich savoriness without sodium overload.",
+      "textureGuidance": "Ultra-tender squash and silky tofu naturally suited for Level 5 swallowing safety.",
+      "estimatedSodiumMg": 290,
+      "estimatedGI": 45,
+      "targetPatients": [
+        "pt-arthur"
+      ],
+      "approvalStatus": "APPROVED_ACTIVE",
+      "dietitianReviewer": "Dr. Sarah Chen, APD",
+      "dietitianNotes": "Verified ultra-low purine and sodium. High soluble fiber promotes gentle glycemic response.",
+      "approvedAt": "2026-10-18T05:21:47.916Z"
+    },
+    "m-3": {
+      "id": "m-3",
+      "householdId": "hh-prime",
+      "dayOfWeek": "Wednesday",
+      "mealType": "LUNCH",
+      "dishName": "Spiced Bitter Gourd (Karela) & Moong Dal with Ragi Roti",
+      "cuisine": "South Indian",
+      "baseRecipe": "Fried bitter gourd with tamarind jaggery gravy and white rice.",
+      "deltaDirectives": [
+        "Omit jaggery sugar entirely; utilize roasted cumin and amchur (dry mango powder) for tang",
+        "Steam bitter gourd slices lightly before dry-roasting with minimal mustard oil (1/2 tsp)",
+        "Pair with split yellow moong dal cooked with turmeric and hing (asafoetida)",
+        "Swap refined wheat or rice with high-fiber finger millet (Ragi) soft phulka"
+      ],
+      "flavorCompensation": "Roasted cumin, carom seeds (ajwain), and freshly squeezed lime mask bitterness naturally.",
+      "textureGuidance": "Moong dal whisked smooth and warm; soft ragi roti torn into bite-size pieces.",
+      "estimatedSodiumMg": 310,
+      "estimatedGI": 42,
+      "targetPatients": [
+        "pt-ananya",
+        "pt-arthur"
+      ],
+      "approvalStatus": "DRAFT_PENDING",
+      "dietitianReviewer": "",
+      "dietitianNotes": "Pending final sodium check on dal tempering."
+    },
+    "meal-1792301452001": {
+      "id": "meal-1792301452001",
+      "householdId": "hh-prime",
+      "dayOfWeek": "Monday",
+      "mealType": "LUNCH",
+      "dishName": "Steamed Barramundi with Ginger Scallion Dashi & Foxtail Millet",
+      "cuisine": "Hainanese Heritage",
+      "baseRecipe": "Traditional steamed fish fillet with light soy, scallions, and fragrant jasmine rice.",
+      "deltaDirectives": [
+        "Swap white jasmine rice with 100% steamed foxtail millet (GI 54)",
+        "Eliminate dark soy sauce; use kombu-shiitake dashi + freshly grated young ginger for umami",
+        "Limit cold-pressed sesame oil to strictly 1/2 teaspoon for aroma only",
+        "Steam barramundi until fork-tender (Level 5 Minced & Moist for Arthur)"
+      ],
+      "flavorCompensation": "Kombu dashi reduction + splash of calamansi zest provides salinity illusion without added sodium.",
+      "textureGuidance": "Flake fillet into small 4mm bite-sized flakes with moist ginger broth.",
+      "estimatedSodiumMg": 340,
+      "estimatedGI": 48,
+      "targetPatients": [
+        "pt-arthur",
+        "pt-ananya"
+      ],
+      "approvalStatus": "DRAFT_PENDING",
+      "dietitianReviewer": "",
+      "dietitianNotes": ""
+    },
+    "meal-1792301452002": {
+      "id": "meal-1792301452002",
+      "householdId": "hh-prime",
+      "dayOfWeek": "Wednesday",
+      "mealType": "LUNCH",
+      "dishName": "Spiced Bitter Gourd (Karela) & Moong Dal with Ragi Roti",
+      "cuisine": "South Indian",
+      "baseRecipe": "Fried bitter gourd with tamarind jaggery gravy and white rice.",
+      "deltaDirectives": [
+        "Omit jaggery sugar entirely; utilize roasted cumin and amchur (dry mango powder) for tang",
+        "Steam bitter gourd slices lightly before dry-roasting with minimal mustard oil (1/2 tsp)",
+        "Pair with split yellow moong dal cooked with turmeric and hing (asafoetida)",
+        "Swap refined wheat or rice with high-fiber finger millet (Ragi) soft phulka"
+      ],
+      "flavorCompensation": "Roasted cumin, carom seeds (ajwain), and freshly squeezed lime mask bitterness naturally.",
+      "textureGuidance": "Moong dal whisked smooth and warm; soft ragi roti torn into bite-size pieces.",
+      "estimatedSodiumMg": 310,
+      "estimatedGI": 42,
+      "targetPatients": [
+        "pt-ananya",
+        "pt-arthur"
+      ],
+      "approvalStatus": "DRAFT_PENDING",
+      "dietitianReviewer": "",
+      "dietitianNotes": ""
+    }
+  },
+  "plateAudits": {
+    "aud-1": {
+      "id": "aud-1",
+      "householdId": "hh-prime",
+      "mealPlanId": "m-1",
+      "mealName": "Steamed Barramundi with Ginger Scallion Dashi",
+      "imageUrl": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800&auto=format&fit=crop&q=80",
+      "overallAdherenceScore": 94,
+      "adherenceTier": "OPTIMAL",
+      "oilSheenScore": 2,
+      "oilObservation": "Minimal glistening surface, no pooling oil droplets, perfectly steamed finish.",
+      "fiberPercentage": 45,
+      "proteinPercentage": 30,
+      "carbPercentage": 25,
+      "clinicalViolations": [],
+      "positiveHighlights": [
+        "Foxtail millet portion strictly controlled under 1 cup cooked volume",
+        "Generous ginger shreds boosting digestive comfort and flavor without sodium",
+        "Fish is thoroughly moist and easily flaked for senior chewing comfort"
+      ],
+      "cookFeedback": "Mahusay, Maria! The oil quantity was spot-on and the fish texture is soft and safe for lolo Arthur.",
+      "auditedAt": "2026-10-18T05:21:47.916Z"
+    }
+  },
+  "groceries": {
+    "g-1": {
+      "id": "g-1",
+      "householdId": "hh-prime",
+      "name": "Foxtail Millet (Kangni / Thinai)",
+      "category": "Grains & Millets",
+      "quantityNeeded": "2 kg",
+      "inPantryStock": true,
+      "purchased": true,
+      "clinicalReason": "Low-GI complex carb substitute for white rice (PCOS & Insulin Resistance)"
+    },
+    "g-2": {
+      "id": "g-2",
+      "householdId": "hh-prime",
+      "name": "Fresh Barramundi Fillets (Skin-on)",
+      "category": "Proteins & Dal",
+      "quantityNeeded": "600 g",
+      "inPantryStock": false,
+      "purchased": false,
+      "clinicalReason": "High omega-3 lean marine protein with low purine burden"
+    },
+    "g-3": {
+      "id": "g-3",
+      "householdId": "hh-prime",
+      "name": "Dried Hokkaido Kombu Kelp",
+      "category": "Condiments & Umami",
+      "quantityNeeded": "1 packet (100g)",
+      "inPantryStock": true,
+      "purchased": true,
+      "clinicalReason": "Natural glutamic umami base to replace sodium bouillon and salt"
+    },
+    "g-4": {
+      "id": "g-4",
+      "householdId": "hh-prime",
+      "name": "Fresh Calamansi / Lime",
+      "category": "Produce & Aromatics",
+      "quantityNeeded": "1 bag",
+      "inPantryStock": true,
+      "purchased": true,
+      "clinicalReason": "Acidic citrus bite creates taste illusion of salinity without sodium"
+    }
+  },
+  "savedAt": "2026-10-18T05:30:52.002Z"
+}

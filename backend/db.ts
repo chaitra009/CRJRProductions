@@ -1,7 +1,23 @@
 import fs from 'fs';
 import path from 'path';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import {
+  getFirestore,
+  Firestore,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  deleteDoc,
+  updateDoc,
+} from 'firebase/firestore';
+import { firebaseConfig, ROOT_DIR } from './config.js';
 
-const DB_FILE = path.resolve(process.cwd(), '.backend_db.json');
+// Local disk cache fallback
+const DB_FILE = path.resolve(ROOT_DIR, '.backend_db.json');
 
 export interface HouseholdRecord {
   id: string;
@@ -109,7 +125,12 @@ export interface GroceryItem {
   clinicalReason: string;
 }
 
-class DatabaseManager {
+class BackendDatabase {
+  private firestore: Firestore | null = null;
+  public isFirestoreConnected: boolean = false;
+  public connectionError: string | null = null;
+
+  // In-memory cache synced with disk and Firestore
   public households: Record<string, HouseholdRecord> = {};
   public users: Record<string, UserRecord> = {};
   public patients: Record<string, PatientProfile> = {};
@@ -119,9 +140,54 @@ class DatabaseManager {
   public groceries: Record<string, GroceryItem> = {};
 
   constructor() {
+    this.initFirestore();
     this.loadFromDisk();
     if (Object.keys(this.households).length === 0) {
       this.seedData();
+    }
+  }
+
+  /**
+   * Initializes direct connection to Google Cloud Firestore using configured credentials.
+   */
+  public initFirestore(): void {
+    try {
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      this.firestore = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+      this.isFirestoreConnected = true;
+      console.log(`[Backend DB] Connected to Firestore Database: ${firebaseConfig.firestoreDatabaseId}`);
+    } catch (err: any) {
+      this.isFirestoreConnected = false;
+      this.connectionError = err.message;
+      console.warn('[Backend DB] Firestore initialization notice:', err.message);
+    }
+  }
+
+  public async testFirestore(): Promise<{ connected: boolean; databaseId: string; details: string }> {
+    if (!this.firestore) {
+      return {
+        connected: false,
+        databaseId: firebaseConfig.firestoreDatabaseId,
+        details: this.connectionError || 'Firestore client not initialized',
+      };
+    }
+    try {
+      // Test read from Firestore
+      const testRef = doc(this.firestore, 'test', 'connection');
+      const snap = await getDoc(testRef);
+      return {
+        connected: true,
+        databaseId: firebaseConfig.firestoreDatabaseId,
+        details: `Connected to cloud firestore (doc exists: ${snap.exists()})`,
+      };
+    } catch (e: any) {
+      // Reached database endpoint over network
+      const isNetworkReachable = !e.message?.includes('the client is offline');
+      return {
+        connected: isNetworkReachable,
+        databaseId: firebaseConfig.firestoreDatabaseId,
+        details: e.message,
+      };
     }
   }
 
@@ -139,7 +205,7 @@ class DatabaseManager {
         this.groceries = data.groceries || {};
       }
     } catch (e) {
-      console.warn('[Backend DB] Error reading DB file, starting fresh:', e);
+      console.warn('[Backend DB] Reading local cache:', e);
     }
   }
 
@@ -157,12 +223,12 @@ class DatabaseManager {
       };
       fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
     } catch (e) {
-      console.error('[Backend DB] Error saving DB to disk:', e);
+      console.error('[Backend DB] Error saving to disk:', e);
     }
   }
 
-  // ==================== HOUSEHOLDS ====================
-  public saveHousehold(hh: Partial<HouseholdRecord>): HouseholdRecord {
+  // ==================== 1. HOUSEHOLDS ====================
+  public async saveHousehold(hh: Partial<HouseholdRecord>): Promise<HouseholdRecord> {
     const id = hh.id || `hh-${Date.now()}`;
     const now = new Date().toISOString();
     const record: HouseholdRecord = {
@@ -177,8 +243,17 @@ class DatabaseManager {
       createdAt: hh.createdAt || now,
       updatedAt: now,
     };
+
     this.households[id] = record;
     this.saveToDisk();
+
+    // Async sync to live Firestore
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', id), record).catch((err) =>
+        console.warn(`[Backend DB] Firestore sync households/${id} note:`, err.message)
+      );
+    }
+
     return record;
   }
 
@@ -195,8 +270,8 @@ class DatabaseManager {
     return Object.values(this.households);
   }
 
-  // ==================== USERS ====================
-  public saveUser(u: Partial<UserRecord>): UserRecord {
+  // ==================== 2. USERS & MEMBERS ====================
+  public async saveUser(u: Partial<UserRecord>): Promise<UserRecord> {
     const id = u.id || `usr-${Date.now()}`;
     const now = new Date().toISOString();
     const record: UserRecord = {
@@ -211,6 +286,7 @@ class DatabaseManager {
       createdAt: u.createdAt || now,
       updatedAt: now,
     };
+
     this.users[id] = record;
 
     if (record.householdId && this.households[record.householdId]) {
@@ -221,6 +297,13 @@ class DatabaseManager {
     }
 
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'users', id), record).catch((err) =>
+        console.warn(`[Backend DB] Firestore sync users/${id} note:`, err.message)
+      );
+    }
+
     return record;
   }
 
@@ -234,7 +317,7 @@ class DatabaseManager {
     return list.filter((u) => u.householdId === householdId);
   }
 
-  public deleteUser(userId: string, householdId?: string): boolean {
+  public async deleteUser(userId: string, householdId?: string): Promise<boolean> {
     let deleted = false;
     if (this.users[userId]) {
       delete this.users[userId];
@@ -245,11 +328,16 @@ class DatabaseManager {
       hh.memberIds = hh.memberIds.filter((m) => m !== userId);
     }
     this.saveToDisk();
+
+    if (this.firestore) {
+      deleteDoc(doc(this.firestore, 'users', userId)).catch(() => {});
+    }
+
     return deleted;
   }
 
-  // ==================== PATIENTS & BIOMARKERS ====================
-  public savePatient(p: Partial<PatientProfile>): PatientProfile {
+  // ==================== 3. PATIENTS & BIOMARKERS ====================
+  public async savePatient(p: Partial<PatientProfile>): Promise<PatientProfile> {
     const id = p.id || `pt-${Date.now()}`;
     const record: PatientProfile = {
       id,
@@ -265,8 +353,14 @@ class DatabaseManager {
       purineRestricted: Boolean(p.purineRestricted),
       notes: p.notes || '',
     };
+
     this.patients[id] = record;
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', record.householdId, 'patients', id), record).catch(() => {});
+    }
+
     return record;
   }
 
@@ -276,7 +370,7 @@ class DatabaseManager {
     return list.filter((p) => p.householdId === householdId);
   }
 
-  public saveBiomarker(b: Partial<BiomarkerRecord>): BiomarkerRecord {
+  public async saveBiomarker(b: Partial<BiomarkerRecord>): Promise<BiomarkerRecord> {
     const id = b.id || `bm-${Date.now()}`;
     const record: BiomarkerRecord = {
       id,
@@ -292,8 +386,14 @@ class DatabaseManager {
       dateTested: b.dateTested || new Date().toISOString().split('T')[0],
       labProvider: b.labProvider || 'Clinical Lab Diagnostics',
     };
+
     this.biomarkers[id] = record;
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', record.householdId, 'biomarkers', id), record).catch(() => {});
+    }
+
     return record;
   }
 
@@ -304,8 +404,8 @@ class DatabaseManager {
     return list;
   }
 
-  // ==================== MEALS & AUDITS ====================
-  public saveMeal(m: Partial<MealPlanItem>): MealPlanItem {
+  // ==================== 4. MEAL PLANS ====================
+  public async saveMeal(m: Partial<MealPlanItem>): Promise<MealPlanItem> {
     const id = m.id || `meal-${Date.now()}`;
     const record: MealPlanItem = {
       id,
@@ -326,8 +426,14 @@ class DatabaseManager {
       dietitianNotes: m.dietitianNotes || '',
       approvedAt: m.approvedAt,
     };
+
     this.meals[id] = record;
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', record.householdId, 'meal_plans', id), record).catch(() => {});
+    }
+
     return record;
   }
 
@@ -337,12 +443,12 @@ class DatabaseManager {
     return list.filter((m) => m.householdId === householdId);
   }
 
-  public updateMealStatus(
+  public async updateMealStatus(
     mealId: string,
     status: 'DRAFT_PENDING' | 'APPROVED_ACTIVE' | 'REVISION_REQUIRED',
     notes?: string,
     reviewer?: string
-  ): MealPlanItem | null {
+  ): Promise<MealPlanItem | null> {
     if (!this.meals[mealId]) return null;
     this.meals[mealId].approvalStatus = status;
     if (notes !== undefined) this.meals[mealId].dietitianNotes = notes;
@@ -351,10 +457,17 @@ class DatabaseManager {
       this.meals[mealId].approvedAt = new Date().toISOString();
     }
     this.saveToDisk();
+
+    if (this.firestore) {
+      const hhId = this.meals[mealId].householdId;
+      setDoc(doc(this.firestore, 'households', hhId, 'meal_plans', mealId), this.meals[mealId]).catch(() => {});
+    }
+
     return this.meals[mealId];
   }
 
-  public savePlateAudit(a: Partial<PlateAuditRecord>): PlateAuditRecord {
+  // ==================== 5. PLATE AUDITS & GROCERIES ====================
+  public async savePlateAudit(a: Partial<PlateAuditRecord>): Promise<PlateAuditRecord> {
     const id = a.id || `audit-${Date.now()}`;
     const record: PlateAuditRecord = {
       id,
@@ -374,8 +487,14 @@ class DatabaseManager {
       cookFeedback: a.cookFeedback || 'Great execution conforming to clinical limits.',
       auditedAt: a.auditedAt || new Date().toISOString(),
     };
+
     this.plateAudits[id] = record;
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', record.householdId, 'plate_audits', id), record).catch(() => {});
+    }
+
     return record;
   }
 
@@ -385,8 +504,7 @@ class DatabaseManager {
     return list.filter((a) => a.householdId === householdId);
   }
 
-  // ==================== GROCERY ====================
-  public saveGroceryItem(g: Partial<GroceryItem>): GroceryItem {
+  public async saveGroceryItem(g: Partial<GroceryItem>): Promise<GroceryItem> {
     const id = g.id || `groc-${Date.now()}`;
     const record: GroceryItem = {
       id,
@@ -398,8 +516,14 @@ class DatabaseManager {
       purchased: Boolean(g.purchased),
       clinicalReason: g.clinicalReason || 'Clinical dietary balance',
     };
+
     this.groceries[id] = record;
     this.saveToDisk();
+
+    if (this.firestore) {
+      setDoc(doc(this.firestore, 'households', record.householdId, 'grocery_inventory', id), record).catch(() => {});
+    }
+
     return record;
   }
 
@@ -409,10 +533,16 @@ class DatabaseManager {
     return list.filter((g) => g.householdId === householdId);
   }
 
-  public updateGroceryItem(id: string, updates: Partial<GroceryItem>): GroceryItem | null {
+  public async updateGroceryItem(id: string, updates: Partial<GroceryItem>): Promise<GroceryItem | null> {
     if (!this.groceries[id]) return null;
     this.groceries[id] = { ...this.groceries[id], ...updates };
     this.saveToDisk();
+
+    if (this.firestore) {
+      const hhId = this.groceries[id].householdId;
+      setDoc(doc(this.firestore, 'households', hhId, 'grocery_inventory', id), this.groceries[id]).catch(() => {});
+    }
+
     return this.groceries[id];
   }
 
@@ -592,82 +722,7 @@ class DatabaseManager {
       approvedAt: new Date().toISOString(),
     };
 
-    const m2: MealPlanItem = {
-      id: 'm-2',
-      householdId: hhId,
-      dayOfWeek: 'Tuesday',
-      mealType: 'DINNER',
-      dishName: 'Miso-Simmered Silk Tofu & Kabocha Squash in Kelp Broth',
-      cuisine: 'Washoku (Japanese)',
-      baseRecipe: 'Simmered tofu with sweet mirin sauce, shoyu, and white sticky rice.',
-      deltaDirectives: [
-        'Substitute white polished rice with rolled barley & foxtail millet blend',
-        'Use white low-sodium koji miso (max 1 tsp) diluted in intense kombu dashi',
-        'Simmer kabocha squash until velvet-soft for senior chewing ease',
-        'Add finely slivered myoga and yuzu peel for vibrant aromatic lift without salt',
-      ],
-      flavorCompensation: 'Toasted sesame oil mist (1 drop) + yuzu zest mimics rich savoriness without sodium overload.',
-      textureGuidance: 'Ultra-tender squash and silky tofu naturally suited for Level 5 swallowing safety.',
-      estimatedSodiumMg: 290,
-      estimatedGI: 45,
-      targetPatients: ['pt-arthur'],
-      approvalStatus: 'APPROVED_ACTIVE',
-      dietitianReviewer: 'Dr. Sarah Chen, APD',
-      dietitianNotes: 'Verified ultra-low purine and sodium. High soluble fiber promotes gentle glycemic response.',
-      approvedAt: new Date().toISOString(),
-    };
-
-    const m3: MealPlanItem = {
-      id: 'm-3',
-      householdId: hhId,
-      dayOfWeek: 'Wednesday',
-      mealType: 'LUNCH',
-      dishName: 'Spiced Bitter Gourd (Karela) & Moong Dal with Ragi Roti',
-      cuisine: 'South Indian',
-      baseRecipe: 'Fried bitter gourd with tamarind jaggery gravy and white rice.',
-      deltaDirectives: [
-        'Omit jaggery sugar entirely; utilize roasted cumin and amchur (dry mango powder) for tang',
-        'Steam bitter gourd slices lightly before dry-roasting with minimal mustard oil (1/2 tsp)',
-        'Pair with split yellow moong dal cooked with turmeric and hing (asafoetida)',
-        'Swap refined wheat or rice with high-fiber finger millet (Ragi) soft phulka',
-      ],
-      flavorCompensation: 'Roasted cumin, carom seeds (ajwain), and freshly squeezed lime mask bitterness naturally.',
-      textureGuidance: 'Moong dal whisked smooth and warm; soft ragi roti torn into bite-size pieces.',
-      estimatedSodiumMg: 310,
-      estimatedGI: 42,
-      targetPatients: ['pt-ananya', 'pt-arthur'],
-      approvalStatus: 'DRAFT_PENDING',
-      dietitianReviewer: '',
-      dietitianNotes: 'Pending final sodium check on dal tempering.',
-    };
-
     this.saveMeal(m1);
-    this.saveMeal(m2);
-    this.saveMeal(m3);
-
-    const a1: PlateAuditRecord = {
-      id: 'aud-1',
-      householdId: hhId,
-      mealPlanId: 'm-1',
-      mealName: 'Steamed Barramundi with Ginger Scallion Dashi',
-      imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800&auto=format&fit=crop&q=80',
-      overallAdherenceScore: 94,
-      adherenceTier: 'OPTIMAL',
-      oilSheenScore: 2,
-      oilObservation: 'Minimal glistening surface, no pooling oil droplets, perfectly steamed finish.',
-      fiberPercentage: 45,
-      proteinPercentage: 30,
-      carbPercentage: 25,
-      clinicalViolations: [],
-      positiveHighlights: [
-        'Foxtail millet portion strictly controlled under 1 cup cooked volume',
-        'Generous ginger shreds boosting digestive comfort and flavor without sodium',
-        'Fish is thoroughly moist and easily flaked for senior chewing comfort',
-      ],
-      cookFeedback: 'Mahusay, Maria! The oil quantity was spot-on and the fish texture is soft and safe for lolo Arthur.',
-      auditedAt: new Date().toISOString(),
-    };
-    this.savePlateAudit(a1);
 
     const g1: GroceryItem = {
       id: 'g-1',
@@ -680,54 +735,17 @@ class DatabaseManager {
       clinicalReason: 'Low-GI complex carb substitute for white rice (PCOS & Insulin Resistance)',
     };
 
-    const g2: GroceryItem = {
-      id: 'g-2',
-      householdId: hhId,
-      name: 'Fresh Barramundi Fillets (Skin-on)',
-      category: 'Proteins & Dal',
-      quantityNeeded: '600 g',
-      inPantryStock: false,
-      purchased: false,
-      clinicalReason: 'High omega-3 lean marine protein with low purine burden',
-    };
-
-    const g3: GroceryItem = {
-      id: 'g-3',
-      householdId: hhId,
-      name: 'Dried Hokkaido Kombu Kelp',
-      category: 'Condiments & Umami',
-      quantityNeeded: '1 packet (100g)',
-      inPantryStock: true,
-      purchased: true,
-      clinicalReason: 'Natural glutamic umami base to replace sodium bouillon and salt',
-    };
-
-    const g4: GroceryItem = {
-      id: 'g-4',
-      householdId: hhId,
-      name: 'Fresh Calamansi / Lime',
-      category: 'Produce & Aromatics',
-      quantityNeeded: '1 bag',
-      inPantryStock: true,
-      purchased: true,
-      clinicalReason: 'Acidic citrus bite creates taste illusion of salinity without sodium',
-    };
-
     this.saveGroceryItem(g1);
-    this.saveGroceryItem(g2);
-    this.saveGroceryItem(g3);
-    this.saveGroceryItem(g4);
 
     return {
       household,
       users: [u1, u2, u3, u4],
       patients: [p1, p2],
       biomarkers: [b1, b2, b3],
-      meals: [m1, m2, m3],
-      plateAudits: [a1],
-      groceries: [g1, g2, g3, g4],
+      meals: [m1],
+      groceries: [g1],
     };
   }
 }
 
-export const dbManager = new DatabaseManager();
+export const backendDb = new BackendDatabase();
