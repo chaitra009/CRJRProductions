@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Separate Households table (stores household metadata and array of memberIds)
+    match /households/{householdId} {
+      allow read, write: if true;
+
+      // Subcollections under household if any
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+
+    // Separate Users table (stores complete user information: name, email, age, gender, roles, householdId)
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Test doc for connection check
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Fallback collection access
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "Household": {
+      "title": "Household",
+      "description": "A family home unit synchronized by a unique Home Code, containing member IDs array referencing the users table.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "homeCode": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "maxLength": 100 },
+        "region": { "type": "string", "enum": ["SINGAPORE", "JAPAN", "INDIA", "SOUTHEAST_ASIA"], "maxLength": 50 },
+        "memberIds": { "type": "array", "description": "Array of member user IDs corresponding to records in users table" },
+        "activeCuisines": { "type": "array" },
+        "activeAppliances": { "type": "array" },
+        "defaultCookLanguage": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "homeCode", "name", "region"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile stored in separate users table with full details, linked to household by householdId and memberIds.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 120 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "maxLength": 30 },
+        "roles": { "type": "array" },
+        "isHomeHead": { "type": "boolean" },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "roles", "householdId"]
+    },
+    "HouseholdMember": {
+      "title": "HouseholdMember",
+      "description": "A user or domestic helper associated with a household, with role authorizations.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "roles": { "type": "array" },
+        "preferredLanguage": { "type": "string", "maxLength": 30 },
+        "patientId": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "householdId", "name", "roles"]
+    },
+    "PatientProfile": {
+      "title": "PatientProfile",
+      "description": "Clinical profile of a household patient or senior citizen.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "age": { "type": "number" },
+        "primaryCondition": { "type": "string", "maxLength": 100 },
+        "secondaryConditions": { "type": "array" },
+        "textureNeeds": { "type": "string", "maxLength": 100 },
+        "targetSodiumMg": { "type": "number" },
+        "targetMaxGI": { "type": "number" },
+        "potassiumRestricted": { "type": "boolean" },
+        "purineRestricted": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "householdId", "name", "primaryCondition"]
+    },
+    "ClinicalBiomarker": {
+      "title": "ClinicalBiomarker",
+      "description": "An isolated clinical biomarker record extracted from a lab panel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "patientId": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "markerName": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "value": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 30 },
+        "referenceRange": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["NORMAL", "ELEVATED", "CRITICAL_HIGH", "LOW"], "maxLength": 20 },
+        "clinicalSignificance": { "type": "string", "maxLength": 300 },
+        "dateTested": { "type": "string", "format": "date-time" },
+        "labProvider": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "patientId", "householdId", "markerName", "value", "unit", "status"]
+    },
+    "MealPlan": {
+      "title": "MealPlan",
+      "description": "A scheduled meal plan with clinical adjustments and Dietitian Approval Gatekeeper status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "dayOfWeek": { "type": "string", "maxLength": 20 },
+        "mealType": { "type": "string", "enum": ["BREAKFAST", "LUNCH", "DINNER", "SNACK"], "maxLength": 20 },
+        "dishName": { "type": "string", "maxLength": 150 },
+        "cuisine": { "type": "string", "maxLength": 50 },
+        "baseRecipe": { "type": "string", "maxLength": 500 },
+        "deltaDirectives": { "type": "array" },
+        "flavorCompensation": { "type": "string", "maxLength": 300 },
+        "textureGuidance": { "type": "string", "maxLength": 200 },
+        "estimatedSodiumMg": { "type": "number" },
+        "estimatedGI": { "type": "number" },
+        "targetPatients": { "type": "array" },
+        "approvalStatus": { "type": "string", "enum": ["DRAFT_PENDING", "APPROVED_ACTIVE", "REVISION_REQUIRED"], "maxLength": 30 },
+        "dietitianReviewer": { "type": "string", "maxLength": 100 },
+        "dietitianNotes": { "type": "string", "maxLength": 500 },
+        "approvedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "householdId", "dishName", "cuisine", "approvalStatus"]
+    },
+    "PlateAudit": {
+      "title": "PlateAudit",
+      "description": "Multimodal vision audit log of cooked plates inspecting oil sheen, portion balance, and adherence.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "mealPlanId": { "type": "string", "maxLength": 128 },
+        "imageUrl": { "type": "string", "maxLength": 500 },
+        "overallAdherenceScore": { "type": "number" },
+        "adherenceTier": { "type": "string", "maxLength": 30 },
+        "oilSheenScore": { "type": "number" },
+        "oilObservation": { "type": "string", "maxLength": 300 },
+        "fiberPercentage": { "type": "number" },
+        "proteinPercentage": { "type": "number" },
+        "carbPercentage": { "type": "number" },
+        "cookFeedback": { "type": "string", "maxLength": 400 },
+        "auditedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "householdId", "overallAdherenceScore", "adherenceTier", "oilSheenScore"]
+    },
+    "GroceryItem": {
+      "title": "GroceryItem",
+      "description": "An aisle-categorized grocery checklist item cross-referenced against pantry inventory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "householdId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "quantityNeeded": { "type": "string", "maxLength": 50 },
+        "inPantryStock": { "type": "boolean" },
+        "purchased": { "type": "boolean" },
+        "clinicalReason": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "householdId", "name", "category", "inPantryStock", "purchased"]
+    }
+  },
+  "firestore": {
+    "/households/{householdId}": {
+      "schema": "Household",
+      "description": "Stores household profiles, home code, active cuisines, and hardware appliances."
+    },
+    "/households/{householdId}/members/{memberId}": {
+      "schema": "HouseholdMember",
+      "description": "Stores household member roles (caregiver, cook, dietitian, patient)."
+    },
+    "/households/{householdId}/patients/{patientId}": {
+      "schema": "PatientProfile",
+      "description": "Stores patient clinical baseline and dietary guardrail parameters."
+    },
+    "/households/{householdId}/clinical_vault/{patientId}/records/{recordId}": {
+      "schema": "ClinicalBiomarker",
+      "description": "Isolated per-patient clinical biomarker vault holding longitudinal lab values."
+    },
+    "/households/{householdId}/meal_plans/{mealPlanId}": {
+      "schema": "MealPlan",
+      "description": "Stores weekly meal plans with clinical delta directives and dietitian gatekeeper sign-off status."
+    },
+    "/households/{householdId}/plate_audits/{auditId}": {
+      "schema": "PlateAudit",
+      "description": "Stores multimodal vision meal adherence inspection logs."
+    },
+    "/households/{householdId}/grocery_inventory/{itemId}": {
+      "schema": "GroceryItem",
+      "description": "Stores aisle-sorted grocery checklists cross-referenced with pantry stock."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles with all details linked to households."
+    }
+  }
+}
