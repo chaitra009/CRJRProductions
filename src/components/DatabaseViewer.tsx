@@ -171,7 +171,7 @@ export function DatabaseViewer({ onSelectHousehold, onClose }: DatabaseViewerPro
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              DB ID: <span className="text-emerald-400 font-semibold">{import.meta.env.VITE_FIREBASE_DATABASE_ID || "ai-studio-remixremixvitalp-d3df39cf-3517-426c-9f2c-856a99b18063"}</span>
+              DB ID: <span className="text-emerald-400 font-semibold">{import.meta.env.VITE_FIREBASE_DATABASE_ID}</span>
             </p>
           </div>
         </div>

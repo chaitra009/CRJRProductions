@@ -4,17 +4,17 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 
 /**
  * PRODUCTION READY FIREBASE INITIALIZATION
- * Uses Vite environment variables with fallback to original JSON values
- * to prevent blank page during local development.
+ * Uses Vite environment variables for security.
+ * Ensure these are set in your deployment environment (e.g., Cloud Run or Firebase Hosting).
  */
 const firebaseConfig: any = {
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "crjrproductions",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:441340478763:web:20947dbd6b48565a28b16e",
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyADyJKA57Y1nY6DgeE_JesIkxuTOkD8r8U",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "crjrproductions.firebaseapp.com",
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || "ai-studio-remixremixvitalp-d3df39cf-3517-426c-9f2c-856a99b18063",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "crjrproductions.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "441340478763",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Initialize Firebase
