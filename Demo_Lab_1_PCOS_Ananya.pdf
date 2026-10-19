@@ -1,0 +1,17 @@
+VITALPLATE CLINICAL LABS - METABOLIC PANEL
+Patient: Ananya Ramesh
+Age: 28 | Gender: Female
+Date: 12-Oct-2026
+Provider: Singapore General Hospital (SGH)
+
+TEST NAME                 RESULT      UNITS       REFERENCE RANGE      STATUS
+Fasting Serum Insulin     24.2        uIU/mL      < 8.0                CRITICAL HIGH
+Fasting Blood Sugar       108         mg/dL       70 - 99              ELEVATED
+HOMA-IR Score             4.2         ratio       < 1.5                CRITICAL HIGH
+HbA1c                     5.9         %           < 5.6                PRE-DIABETIC
+Serum LH                  16.8        mIU/mL      2.0 - 10.0           ELEVATED
+Serum FSH                 6.4         mIU/mL      3.0 - 8.0            NORMAL
+LH / FSH Ratio            2.6         ratio       1.0 - 1.2            ELEVATED
+Free Testosterone         68.4        ng/dL       15.0 - 45.0          ELEVATED
+
+Notes: Clinical markers consistent with PCOS and severe insulin resistance. Low glycemic index nutrition highly indicated.

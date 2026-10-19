@@ -1,6 +1,6 @@
 /**
  * VitalPlate APAC - Frontend API Client
- * Connects frontend to the Unified Node.js backend via /api/*
+ * Clean separation: UI purely consumes data from the Python Backend via /api/*
  */
 
 import {
@@ -126,6 +126,7 @@ export async function requestAudioBriefing(payload: {
 }
 
 export async function reindexMealQueue(payload: {
+  householdId?: string;
   guardrails: any;
   currentMeals: MealPlanItem[];
   patientProfiles: PatientProfile[];
@@ -134,6 +135,16 @@ export async function reindexMealQueue(payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchClinicalSynthesis(householdId: string): Promise<any> {
+  const res = await apiFetch<{ success: boolean; data: any }>(`/api/synthesis?householdId=${encodeURIComponent(householdId)}`);
+  return res.data;
+}
+
+export async function fetchHouseholdClinicalAnalysis(householdId: string): Promise<any> {
+  const res = await apiFetch<{ success: boolean; data: any }>(`/api/clinical-analysis?householdId=${encodeURIComponent(householdId)}`);
+  return res.data;
 }
 
 // 3. Database & Entity Persistence Endpoints
@@ -252,6 +263,12 @@ export async function createPlateAudit(audit: PlateAuditRecord): Promise<PlateAu
 
 export async function fetchGroceries(householdId?: string): Promise<GroceryItem[]> {
   const url = householdId ? `/api/grocery?householdId=${encodeURIComponent(householdId)}` : '/api/grocery';
+  const res = await apiFetch<{ success: boolean; data: GroceryItem[] }>(url);
+  return res.data || [];
+}
+
+export async function fetchLowStockGroceries(householdId?: string): Promise<GroceryItem[]> {
+  const url = householdId ? `/api/grocery/low-stock?householdId=${encodeURIComponent(householdId)}` : '/api/grocery/low-stock';
   const res = await apiFetch<{ success: boolean; data: GroceryItem[] }>(url);
   return res.data || [];
 }

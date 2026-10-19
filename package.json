@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "tsx server.ts",
-    "backend": "tsx backend/server.ts",
-    "start:backend": "tsx backend/server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

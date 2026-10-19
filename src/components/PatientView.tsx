@@ -1,125 +1,306 @@
 import React, { useState } from 'react';
-import { MealPlanItem, PatientProfile, BiomarkerRecord } from '../types';
-import { Heart, Droplets, CheckCircle2, AlertCircle, Sun, Moon, Utensils } from 'lucide-react';
+import { PatientProfile, MealPlanItem, BiomarkerRecord } from '../types';
+import { LabReportParser } from './LabReportParser';
+import { Heart, Activity, Droplets, CheckCircle, Shield, Utensils, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PatientViewProps {
-  patient: PatientProfile;
+  patients: PatientProfile[];
   approvedMeals: MealPlanItem[];
   biomarkers: BiomarkerRecord[];
+  onAddBiomarker: (record: BiomarkerRecord) => void;
 }
 
 export const PatientView: React.FC<PatientViewProps> = ({
-  patient,
+  patients,
   approvedMeals,
   biomarkers,
+  onAddBiomarker,
 }) => {
-  const [waterCups, setWaterCups] = useState(4);
-  const targetWaterCups = 8;
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(patients[0]?.id || '');
+  const [waterGlasses, setWaterGlasses] = useState<number>(5);
+  const [showParser, setShowParser] = useState(false);
+  const [activeTab, setActiveTab] = useState<'meals' | 'clinical'>('meals');
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrow = tomorrowDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+  const todaysMeals = approvedMeals.filter(m => m.dayOfWeek.toLowerCase() === today.toLowerCase());
+  const currentPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const patientBiomarkers = biomarkers.filter((b) => b.patientId === (currentPatient?.id || ''));
+
+  const hasOnlyUnapproved = approvedMeals.length === 0 && (patients.length > 0);
+
+  if (!currentPatient) {
+    return (
+      <div className="max-w-4xl mx-auto p-12 bg-white border border-slate-200 rounded-2xl text-center space-y-4 font-sans">
+        <Heart className="w-12 h-12 text-rose-400 mx-auto" />
+        <h2 className="text-xl font-bold text-slate-900">No Patient Profile Registered</h2>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">
+          There are currently no patient or senior records in this household. Please ask your Household Admin to register a member in the users table or upload a clinical lab report.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* High-Contrast Senior Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white space-y-3">
-        <div className="flex items-center gap-2 text-teal-400 font-mono text-xs">
-          <span>DAILY HEALTH & MEAL GUIDE</span>
-          <span>·</span>
-          <span>HOUSEHOLD CARE</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-          Good day, {patient?.name || 'Arthur'}!
-        </h1>
-        <p className="text-sm text-slate-300 max-w-xl">
-          Here is your personalized, doctor-approved meal plan for today. Every dish has been prepared to match your texture needs and heart-safe sodium targets.
-        </p>
-
-        {/* Clinical Quick Badges */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          <span className="px-3 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30 text-xs font-semibold">
-            {patient?.primaryCondition || 'Hypertension & Dysphagia'}
-          </span>
-          {patient?.textureNeeds && (
-            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold">
-              {patient.textureNeeds}
-            </span>
-          )}
-          {patient?.targetSodiumMg && (
-            <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 text-xs font-semibold">
-              Daily Sodium &lt; {patient.targetSodiumMg} mg
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Hydration Tracker */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Droplets className="w-5 h-5 text-blue-400" />
-            <h3 className="font-bold text-white text-base">Daily Hydration Goal</h3>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Top Banner */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <span>Persona 4: The Patient / Senior Citizen Self</span>
+              <span>·</span>
+              <span>Personal Care Companion</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">
+              Welcome, {currentPatient?.name}
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">
+              Your doctor-approved meals, health milestones, and daily nourishment.
+            </p>
           </div>
-          <span className="text-xs font-mono text-blue-400 font-bold">
-            {waterCups} of {targetWaterCups} Glasses
-          </span>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {Array.from({ length: targetWaterCups }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setWaterCups(i + 1)}
-              className={`h-10 flex-1 rounded-xl transition-all ${
-                i < waterCups
-                  ? 'bg-blue-500 text-white shadow-sm'
-                  : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
-              }`}
-            >
-              💧
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Today's Approved Meals */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Utensils className="w-5 h-5 text-teal-400" />
-          <span>Today's Dietitian-Approved Dishes</span>
-        </h3>
-
-        {approvedMeals.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-sm">
-            Your clinical dietitian is currently reviewing today's meal queue.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {approvedMeals.map((meal) => (
-              <div
-                key={meal.id}
-                className="p-6 rounded-3xl bg-slate-900 border border-teal-500/30 space-y-3"
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg shrink-0">
+            {patients.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPatientId(p.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  selectedPatientId === p.id
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-teal-400 uppercase">
-                    {meal.dayOfWeek} · {meal.mealType}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold">
-                    Approved
-                  </span>
-                </div>
-
-                <h4 className="text-xl font-bold text-white">{meal.dishName}</h4>
-                <div className="text-xs text-amber-300 font-medium">
-                  {meal.textureGuidance || 'Soft-simmered for comfortable chewing.'}
-                </div>
-
-                <div className="pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400 font-mono">
-                  <span>Sodium: ~{meal.estimatedSodiumMg}mg</span>
-                  <span>GI Index: {meal.estimatedGI}</span>
-                </div>
-              </div>
+                {p.name.split(' ')[0]}
+              </button>
             ))}
+          </div>
+        </div>
+
+        {/* Condition highlight */}
+        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-teal-800 font-medium">
+              <Shield className="w-4 h-4 text-teal-600" />
+              <span>Active Care Focus: {currentPatient?.primaryCondition}</span>
+            </div>
+            {currentPatient?.textureNeeds && (
+              <span className="text-slate-500 font-mono">
+                Texture: {currentPatient.textureNeeds}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowParser(!showParser)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all cursor-pointer ${
+              showParser 
+                ? 'bg-teal-50 border-teal-200 text-teal-700' 
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>{showParser ? 'Close Lab Uploader' : 'Add New Lab Report'}</span>
+            {showParser ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
+
+        {/* Self-Service Lab Parser */}
+        {showParser && currentPatient && (
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <LabReportParser 
+              patient={currentPatient}
+              onAddBiomarker={onAddBiomarker}
+              title="Add Your Latest Lab Results"
+              description="Keep your clinical profile up to date. Upload your latest blood work or pathology report to refine your AI-powered meal plan."
+            />
           </div>
         )}
       </div>
+
+      {/* TAB NAVIGATION */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab('meals')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+            activeTab === 'meals' ? 'bg-teal-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+        >
+          Daily Menu & Hydration
+        </button>
+        <button
+          onClick={() => setActiveTab('clinical')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'clinical' ? 'bg-teal-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          <span>Clinical Review ({patientBiomarkers.length})</span>
+        </button>
+      </div>
+
+      {/* Main Content Area */}
+      {activeTab === 'meals' ? (
+        hasOnlyUnapproved ? (
+          <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
+            <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto">
+              <Heart className="w-8 h-8 text-teal-500" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Your New Weekly Plan is Preparing</h2>
+            <p className="text-slate-500 max-w-md mx-auto text-sm">
+              Vertex AI has analyzed your latest clinical reports. Your Clinical Dietitian is currently finalizing the menu to ensure it meets 100% of your safety needs.
+            </p>
+            <p className="text-xs text-teal-600 font-medium">Please check back shortly for your personalized menu.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 font-mono flex items-center gap-2">
+                  <Utensils className="w-4 h-4 text-teal-600" />
+                  DOCTOR-APPROVED MEALS FOR TODAY
+                </h2>
+                <span className="text-xs text-slate-500">All dishes vetted by Clinical Dietitian</span>
+              </div>
+
+              <div className="space-y-3">
+                {todaysMeals.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-500 text-xs">
+                    No approved meals scheduled for today.
+                  </div>
+                ) : (
+                  todaysMeals.map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors space-y-3"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-mono text-teal-700 font-bold uppercase">
+                          {meal.dayOfWeek} · {meal.mealType}
+                        </span>
+                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-mono font-medium flex items-center gap-1 border border-emerald-200">
+                          <CheckCircle className="w-3 h-3" /> Dietitian Signed Off
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">{meal.dishName}</h3>
+                      <p className="text-xs text-slate-600 leading-relaxed">{meal.baseRecipe}</p>
+                      <div className="p-3 bg-slate-50 rounded-lg text-xs space-y-2">
+                        <div className="space-y-1">
+                          <span className="font-semibold text-slate-700 text-[11px] uppercase font-mono block">
+                            Why this nourishes you:
+                          </span>
+                          <p className="text-slate-600 text-[11px]">{meal.flavorCompensation}</p>
+                        </div>
+                        {currentPatient && meal.individualPortionNotes && meal.individualPortionNotes[currentPatient.id] && (
+                          <div className="pt-2 border-t border-slate-200">
+                            <span className="font-semibold text-teal-700 text-[10px] uppercase font-mono block">
+                              Your Personal Portion:
+                            </span>
+                            <p className="text-slate-900 font-bold text-xs mt-0.5">
+                              {meal.individualPortionNotes[currentPatient.id]}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-slate-500 font-semibold flex items-center gap-1.5">
+                    <Droplets className="w-4 h-4 text-sky-500" /> Daily Hydration
+                  </span>
+                  <span className="text-xs font-mono font-bold text-slate-900">{waterGlasses} / 8 Glasses</span>
+                </div>
+                <div className="flex items-center justify-between gap-1 pt-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setWaterGlasses(g)}
+                      className={`flex-1 h-8 rounded transition-all cursor-pointer ${
+                        g <= waterGlasses
+                          ? 'bg-sky-500 text-white font-mono text-xs font-bold'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-400 font-mono text-xs'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-400">Adequate hydration supports kidney filtration (eGFR).</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                <span className="text-xs font-mono uppercase text-slate-500 font-semibold block">Tracked Clinical Markers</span>
+                <div className="space-y-2">
+                  {patientBiomarkers.slice(0, 4).map((bm) => (
+                    <div key={bm.id} className="p-2.5 bg-slate-50 rounded-lg flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-800 block">{bm.markerName}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Target: {bm.referenceRange}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-slate-900">{bm.value} {bm.unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
+          <div className="max-w-2xl">
+            <h2 className="text-lg font-bold text-slate-900">Your Clinical Health Trend</h2>
+            <p className="text-xs text-slate-600 mt-1">Review your longitudinal biomarker data from laboratory reports.</p>
+          </div>
+          <div className="border border-slate-200 rounded-xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono uppercase text-[10px]">
+                <tr>
+                  <th className="px-4 py-3">Marker Name</th>
+                  <th className="px-4 py-3">Latest Value</th>
+                  <th className="px-4 py-3">Target Range</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Date Tested</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {patientBiomarkers.map((bm) => (
+                  <tr key={bm.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-900">{bm.markerName}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{bm.value} {bm.unit}</td>
+                    <td className="px-4 py-3 text-slate-500 font-mono">{bm.referenceRange}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        bm.status === 'CRITICAL_HIGH' ? 'bg-rose-100 text-rose-700' :
+                        bm.status === 'ELEVATED' ? 'bg-amber-100 text-amber-700' :
+                        'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {bm.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 font-mono">{bm.dateTested}</td>
+                  </tr>
+                ))}
+                {patientBiomarkers.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">No clinical history found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

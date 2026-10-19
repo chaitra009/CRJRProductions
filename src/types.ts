@@ -1,68 +1,80 @@
-export type UserRole = 'admin' | 'caregiver' | 'cook' | 'dietitian' | 'patient';
+// Exactly 3 Canonical Roles: caregiver/cook, dietitian, and members
+export type CanonicalUserRole = 'caregiver_cook' | 'dietitian' | 'member';
 
-export type RegionalRegion = 'SINGAPORE' | 'JAPAN' | 'INDIA' | 'SOUTHEAST_ASIA';
+export type UserRole = CanonicalUserRole | 'caregiver' | 'cook' | 'admin' | 'patient';
 
-export type SupportedDialect =
-  | 'Tagalog'
-  | 'Japanese'
-  | 'Mandarin'
-  | 'Bahasa Indonesia'
-  | 'Tamil'
-  | 'Hindi'
-  | 'Kannada'
-  | 'English';
-
-export interface HouseholdRecord {
-  id: string;
-  homeCode: string;
-  name: string;
-  region: RegionalRegion;
-  memberIds: string[];
-  activeCuisines: string[];
-  activeAppliances: string[];
-  defaultCookLanguage: string;
-  createdAt: string;
-  updatedAt?: string;
+export function normalizeRole(role: string): CanonicalUserRole {
+  const r = (role || '').toLowerCase().trim().replace(/[\/\s&-]+/g, '_');
+  if (r.includes('caregiver') || r.includes('cook') || r.includes('chef')) {
+    return 'caregiver_cook';
+  }
+  if (r.includes('dietit') || r.includes('clinical') || r.includes('doctor')) {
+    return 'dietitian';
+  }
+  return 'member';
 }
 
 export interface UserRecord {
   id: string;
   name: string;
   email: string;
-  age: number;
-  gender: string;
+  password?: string; // For email/password login
+  age?: number;
+  gender?: string;
   roles: UserRole[];
   isHomeHead: boolean;
-  householdId?: string;
+  householdId: string;
   createdAt: string;
-  updatedAt?: string;
+}
+
+export interface HouseholdRecord {
+  id: string;
+  homeCode: string;
+  name: string;
+  region: RegionalRegion;
+  memberIds: string[]; // array of member IDs present in User table
+  activeCuisines: string[];
+  activeAppliances: string[];
+  defaultCookLanguage: string;
+  createdAt: string;
 }
 
 export interface HouseholdMemberInfo {
   id: string;
   name: string;
   email: string;
-  age: number;
-  gender: string;
+  age?: number;
+  gender?: string;
+  avatarUrl?: string;
   roles: UserRole[];
   isHomeHead: boolean;
-  preferredLanguage?: string;
-  patientId?: string;
+  joinedAt: string;
 }
+
+export type RegionalRegion = 'SINGAPORE' | 'JAPAN' | 'SOUTH_INDIA' | 'NORTH_INDIA' | 'SOUTHEAST_ASIA';
+
+export type SupportedDialect =
+  | 'Japanese'
+  | 'Tamil'
+  | 'Hindi'
+  | 'Kannada'
+  | 'Singapore'
+  | 'English';
 
 export interface PatientProfile {
   id: string;
   householdId: string;
   name: string;
   age: number;
+  avatarUrl?: string;
   primaryCondition: string;
-  secondaryConditions?: string[];
+  secondaryConditions: string[];
   textureNeeds?: string;
-  targetSodiumMg?: number;
-  targetMaxGI?: number;
-  potassiumRestricted?: boolean;
-  purineRestricted?: boolean;
-  notes?: string;
+  targetSodiumMg: number;
+  targetMaxGI: number;
+  potassiumRestricted: boolean;
+  purineRestricted: boolean;
+  notes: string;
 }
 
 export interface BiomarkerRecord {
@@ -70,15 +82,17 @@ export interface BiomarkerRecord {
   patientId: string;
   householdId: string;
   markerName: string;
-  category: 'Metabolic & Glycemic' | 'Cardiovascular & Renal' | 'Electrolytes' | 'Lipid Profile' | 'Hormonal & PCOS';
+  category: 'Metabolic & Glycemic' | 'Cardiovascular & Renal' | 'Hormonal' | 'Lipids' | 'Electrolytes';
   value: number;
   unit: string;
   referenceRange: string;
   status: 'NORMAL' | 'ELEVATED' | 'CRITICAL_HIGH' | 'LOW';
   clinicalSignificance: string;
   dateTested: string;
-  labProvider?: string;
+  labProvider: string;
 }
+
+export type MealApprovalStatus = 'DRAFT_PENDING' | 'APPROVED_ACTIVE' | 'REVISION_REQUIRED';
 
 export interface MealPlanItem {
   id: string;
@@ -87,17 +101,25 @@ export interface MealPlanItem {
   mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
   dishName: string;
   cuisine: string;
-  baseRecipe?: string;
+  baseRecipe: string;
   deltaDirectives: string[];
-  flavorCompensation?: string;
+  separationInstructions?: SeparationInstruction[];
+  individualPortionNotes?: Record<string, string>; // Map of patientID -> portion note
+  flavorCompensation: string;
   textureGuidance?: string;
-  estimatedSodiumMg?: number;
-  estimatedGI?: number;
-  targetPatients: string[];
-  approvalStatus: 'DRAFT_PENDING' | 'APPROVED_ACTIVE' | 'REVISION_REQUIRED';
+  estimatedSodiumMg: number;
+  estimatedGI: number;
+  targetPatients: string[]; // patient IDs
+  approvalStatus: MealApprovalStatus;
   dietitianReviewer?: string;
   dietitianNotes?: string;
   approvedAt?: string;
+}
+
+export interface SeparationInstruction {
+  step: string;
+  action: string;
+  reason: string;
 }
 
 export interface PlateAuditRecord {
@@ -105,9 +127,9 @@ export interface PlateAuditRecord {
   householdId: string;
   mealPlanId?: string;
   mealName: string;
-  imageUrl?: string;
+  imageUrl: string;
   overallAdherenceScore: number;
-  adherenceTier: 'OPTIMAL' | 'ACCEPTABLE' | 'NON_COMPLIANT';
+  adherenceTier: 'OPTIMAL' | 'ACCEPTABLE' | 'DEVIATED' | 'VIOLATION';
   oilSheenScore: number;
   oilObservation: string;
   fiberPercentage: number;
@@ -123,11 +145,17 @@ export interface GroceryItem {
   id: string;
   householdId: string;
   name: string;
-  category: 'Grains & Millets' | 'Proteins & Dal' | 'Vegetables & Greens' | 'Condiments & Umami' | 'Produce & Aromatics';
+  category: 'Vegetables & Greens' | 'Grains & Millets' | 'Proteins & Dal' | 'Condiments & Umami' | 'Pantry Essentials';
   quantityNeeded: string;
   inPantryStock: boolean;
   purchased: boolean;
   clinicalReason: string;
+  currentStockLevel?: number; // e.g. 15 (percent or units)
+  thresholdStockLevel?: number; // e.g. 25
+  unit?: string; // e.g. 'g', 'kg', 'portions', 'packs'
+  dailyConsumptionRate?: string; // e.g. '80g / day (Arthur & Priya)'
+  daysRemaining?: number; // e.g. 2
+  isLowStock?: boolean;
 }
 
 export interface AudioBriefingData {
@@ -135,8 +163,8 @@ export interface AudioBriefingData {
   scriptPhonetic: string;
   scriptEnglishTranslation: string;
   flavorCompensationTip: string;
-  audioBase64: string | null;
-  mimeType: string;
+  audioBase64?: string | null;
+  mimeType?: string;
 }
 
 export interface IngredientSwapResult {
